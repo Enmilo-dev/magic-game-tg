@@ -117,9 +117,22 @@ export async function getBalance(publicKey: PublicKey): Promise<number> {
 }
 
 export async function fetchSolPrice(): Promise<number> {
-  const res = await fetch(
-    "https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT"
-  );
-  const data = (await res.json()) as { price: string };
-  return parseFloat(data.price);
+  try {
+    const res = await fetch(
+      "https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT"
+    );
+    const data = await res.json() as { price: string };
+    const price = parseFloat(data.price);
+    if (isNaN(price)) throw new Error("Invalid price from Binance");
+    console.log("SOL price:", price);
+    return price;
+  } catch {
+    // Fallback to CoinGecko
+    const res = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd"
+    );
+    const data = await res.json() as { solana: { usd: number } };
+    console.log("SOL price (CoinGecko):", data.solana.usd);
+    return data.solana.usd;
+  }
 }
